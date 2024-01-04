@@ -1,25 +1,39 @@
-import logo from './logo.svg';
-import './App.css';
+import Container from 'react-bootstrap/Container';
+import { useCallback, useState } from 'react';
+import { useDropzone } from 'react-dropzone';
 
-function App() {
+function MyDropzone() {
+  var [files, setFiles] = useState([]);
+  const onDrop = useCallback(acceptedFiles => {
+    setFiles(prevState => [...prevState, ...acceptedFiles]);
+  })
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    accept: {
+      'image/png': [],
+    },
+    onDrop,
+  })
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div {...getRootProps()}>
+      <input {...getInputProps()} />
+      {
+        isDragActive ?
+          <p>Drop the files here ...</p> :
+          <p>Drag 'n' drop some files here, or click to select files</p>
+      }
     </div>
+  )
+}
+
+function BasicExample() {
+  console.log("BasicExample");
+  return (
+    <Container className="p-3">
+      <MyDropzone />
+    </Container>
   );
 }
 
-export default App;
+export default BasicExample;
