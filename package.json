@@ -1,7 +1,7 @@
 {
   "name": "chipng",
   "version": "0.1.0",
-  "homepage": ".",
+  "homepage": "https://rbxxaxa.github.io/chipng/",
   "private": true,
   "dependencies": {
     "@testing-library/jest-dom": "^5.17.0",
@@ -24,7 +24,8 @@
     "sass": "^1.69.7",
     "stream-browserify": "^3.0.0",
     "util": "^0.12.5",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^2.1.4",
+    "workerpool": "^9.0.4"
   },
   "scripts": {
     "predeploy": "npm run build",
