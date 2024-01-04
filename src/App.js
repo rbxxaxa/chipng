@@ -8,34 +8,17 @@ import Worker from 'worker-loader!./worker.js';
 
 function LoadedImageFile(props) {
   const { entry, onRemove } = props;
-  const [fileData, setFileData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [imageData, setImageData] = useState(null);
   const [dataUrl, setDataUrl] = useState(null);
 
   useEffect(() => {
     const reader = new FileReader();
     const worker = new Worker()
 
-
     worker.onmessage = (event) => {
-      const { imageData } = event.data;
-
-      // Create a canvas and get its 2D context
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-
-      // Set the canvas dimensions to the image dimensions
-      canvas.width = imageData.width;
-      canvas.height = imageData.height;
-
-      // Draw the image data onto the canvas
-      ctx.putImageData(imageData, 0, 0);
-
-      const dataUrl = canvas.toDataURL();
-
-      setImageData(imageData);
+      const { dataUrl } = event.data;
       setDataUrl(dataUrl);
+      setIsLoading(false);
     };
 
     worker.postMessage({ file: entry.file });
@@ -46,7 +29,6 @@ function LoadedImageFile(props) {
       <div>
         <div>{entry.file.name}</div>
         <div>Loading...</div>
-        {dataUrl && <img src={dataUrl} alt="Loaded content" />}
       </div>
     );
   }
@@ -55,6 +37,7 @@ function LoadedImageFile(props) {
     <div>
       <div>{entry.file.name}</div>
       <button onClick={() => onRemove(entry.id)}>Remove</button>
+      {dataUrl && <img src={dataUrl} alt="Loaded content" style={{ border: '1px solid black' }} />}
     </div>
   );
 }
