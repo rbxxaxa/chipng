@@ -20,7 +20,6 @@ function processTaskWithWorker(task, setDataUrl) {
   // Find an idle worker
   const worker = workerPool.find((worker) => !worker.busy);
 
-  console.log("finding worker...");
   if (worker) {
     // Mark the worker as busy
     worker.busy = true;
@@ -29,7 +28,6 @@ function processTaskWithWorker(task, setDataUrl) {
     worker.onmessage = (e) => {
       // Mark the worker as idle
       worker.busy = false;
-      console.log(worker.busy);
 
       const { dataUrl } = e.data;
       setDataUrl(dataUrl);
@@ -61,8 +59,6 @@ function LoadedImageFile(props) {
       </div>
     );
   }
-
-  console.log(dataUrl);
 
   return (
     <div>
