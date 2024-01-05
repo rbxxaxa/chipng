@@ -35,6 +35,7 @@ function onProcessTaskWithWorker() {
         const { dataUrl } = e.data;
         task.setDataUrl(dataUrl);
 
+        console.log("tasks left: ", taskQueue.length);
         if (taskQueue.length > 0) {
           onProcessTaskWithWorker();
         }
