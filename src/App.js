@@ -6,39 +6,43 @@ import { memo, useEffect } from "react";
 import { Row, Col } from "react-bootstrap";
 // eslint-disable-next-line import/no-webpack-loader-syntax
 import Worker from "worker-loader!./worker.js";
+import { on } from "process";
 
 // Create a worker pool
 const workerPool = [];
-const maxWorkers = 128; // Maximum number of concurrent workers
+const maxWorkers = navigator.hardwareConcurrency - 1;
 
 for (let i = 0; i < maxWorkers; i++) {
   const worker = new Worker();
   workerPool.push(worker);
 }
 
-function processTaskWithWorker(task, setDataUrl) {
-  // Find an idle worker
+let taskQueue = [];
+function onProcessTaskWithWorker() {
   const worker = workerPool.find((worker) => !worker.busy);
 
   if (worker) {
-    // Mark the worker as busy
-    worker.busy = true;
+    let task = taskQueue.shift();
+    if (task) {
+      worker.busy = true;
+      worker.onmessage = (e) => {
+        worker.busy = false;
 
-    // Listen for the worker to finish processing the task
-    worker.onmessage = (e) => {
-      // Mark the worker as idle
-      worker.busy = false;
+        const { dataUrl } = e.data;
+        task.setDataUrl(dataUrl);
 
-      const { dataUrl } = e.data;
-      setDataUrl(dataUrl);
-    };
-
-    // Process the task with the worker
-    worker.postMessage(task);
-  } else {
-    // All workers are busy, retry after a delay
-    setTimeout(() => processTaskWithWorker(task, setDataUrl), 50);
+        if (taskQueue.length > 0) {
+          onProcessTaskWithWorker();
+        }
+      };
+      worker.postMessage(task.file);
+    }
   }
+}
+
+function processTaskWithWorker(file, setDataUrl) {
+  taskQueue.push({ file, setDataUrl });
+  onProcessTaskWithWorker();
 }
 
 function LoadedImageFile(props) {
