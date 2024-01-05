@@ -7,10 +7,14 @@ import { Row, Col } from "react-bootstrap";
 // eslint-disable-next-line import/no-webpack-loader-syntax
 import Worker from "worker-loader!./worker.js";
 import { on } from "process";
+import JSZip from "jszip";
+import { saveAs } from "file-saver";
 
 // Create a worker pool
 const workerPool = [];
-const maxWorkers = navigator.hardwareConcurrency - 1;
+const maxWorkers = Math.max(1, navigator.hardwareConcurrency - 1);
+
+const images = [];
 
 for (let i = 0; i < maxWorkers; i++) {
   const worker = new Worker();
@@ -45,56 +49,21 @@ function processTaskWithWorker(file, setDataUrl) {
   onProcessTaskWithWorker();
 }
 
-function LoadedImageFile(props) {
-  const { entry, onRemove } = props;
-  const [dataUrl, setDataUrl] = useState(null);
-
-  useEffect(() => {
-    const reader = new FileReader();
-
-    processTaskWithWorker({ file: entry.file }, setDataUrl);
-  }, [entry]);
-
-  if (!dataUrl) {
-    return (
-      <div>
-        <div>{entry.file.name}</div>
-        <div>Loading...</div>
-      </div>
-    );
-  }
-
-  return (
-    <div>
-      <div>{entry.file.name}</div>
-      <button onClick={() => onRemove(entry.id)}>Remove</button>
-      {dataUrl && (
-        <img
-          src={dataUrl}
-          alt="Loaded content"
-          style={{ border: "1px solid black" }}
-        />
-      )}
-    </div>
+function ImageInput({ addImage, removeImage }) {
+  const onDrop = useCallback(
+    (acceptedFiles) => {
+      acceptedFiles.forEach((file) => {
+        const id = uuidv4();
+        processTaskWithWorker({ file: file }, (dataUrl) => {
+          addImage(id, file.name, dataUrl);
+        });
+      });
+    },
+    [addImage]
   );
-}
-LoadedImageFile = memo(LoadedImageFile);
-
-function MyDropzone() {
-  var [entries, setEntries] = useState([]);
-
-  const onDrop = useCallback((acceptedFiles) => {
-    setEntries((prevState) => [
-      ...prevState,
-      ...acceptedFiles.map((file) => ({
-        id: uuidv4(),
-        file: file,
-      })),
-    ]);
-  }, []);
 
   const onRemove = useCallback((id) => {
-    setEntries((prevState) => prevState.filter((entry) => entry.id !== id));
+    removeImage(id);
   }, []);
 
   const { getRootProps, getInputProps, open } = useDropzone({
@@ -112,23 +81,61 @@ function MyDropzone() {
       <button type="button" onClick={open}>
         Open File Dialog
       </button>
-      <Row xs={1} md={4} className="g-4">
-        {entries.map((entry) => (
-          <Col>
-            <LoadedImageFile key={entry.id} entry={entry} onRemove={onRemove} />
-          </Col>
-        ))}
-      </Row>
     </div>
   );
 }
 
-function BasicExample() {
+function exportImages(images) {
+  const zip = new JSZip();
+  const filenames = {};
+
+  Object.entries(images).forEach(([id, { filename, dataUrl }]) => {
+    const base64Data = dataUrl.replace(/^data:image\/(png|jpg);base64,/, "");
+
+    // Check for duplicate filenames
+    if (filenames[filename]) {
+      const dotIndex = filename.lastIndexOf(".");
+      const name = filename.substring(0, dotIndex);
+      const extension = filename.substring(dotIndex);
+      filename = `${name}(${filenames[filename]})${extension}`;
+      filenames[filename]++;
+    } else {
+      filenames[filename] = 1;
+    }
+
+    zip.file(filename, base64Data, { base64: true });
+  });
+
+  zip.generateAsync({ type: "blob" }).then((content) => {
+    saveAs(content, "images.zip");
+  });
+}
+
+function App() {
+  const [images, setImages] = useState({});
+
+  const addImage = useCallback((id, filename, dataUrl) => {
+    setImages((prevState) => ({ ...prevState, [id]: { filename, dataUrl } }));
+  }, []);
+
+  const removeImage = useCallback((id) => {
+    setImages((prevState) => {
+      const newState = { ...prevState };
+      delete newState[id];
+      return newState;
+    });
+  }, []);
+
+  const onExport = useCallback(() => {
+    exportImages(images);
+  }, [images]);
+
   return (
-    <Container className="p-3">
-      <MyDropzone />
+    <Container fluid className="p-3">
+      <ImageInput addImage={addImage} removeImage={removeImage} />
+      <button onClick={onExport}>Export</button>
     </Container>
   );
 }
 
-export default BasicExample;
+export default App;
