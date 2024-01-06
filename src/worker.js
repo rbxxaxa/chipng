@@ -1,5 +1,7 @@
 import { PNG } from "pngjs";
 
+// This file uses the same algorithm as https://github.com/urraka/alpha-bleeding/tree/master
+
 // eslint-disable-next-line no-restricted-globals
 addEventListener("message", (e) => {
   const { file } = e.data;
@@ -130,23 +132,12 @@ addEventListener("message", (e) => {
       }
 
       const resultBuffer = PNG.sync.write(png);
-
-      // // Create a new Blob from the buffer
       const blob = new Blob([resultBuffer], { type: "image/png" });
-
-      // // Create a new FileReader
       const reader = new FileReader();
-
-      // // Set the onload function of the reader
       reader.onload = function (event) {
-        // The result attribute contains the data URL
         const dataUrl = event.target.result;
-
-        // Send the data URL back to the main thread
         postMessage({ dataUrl: dataUrl });
       };
-
-      // // Read the blob as a data URL
       reader.readAsDataURL(blob);
     });
   });

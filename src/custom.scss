@@ -1,2 +1,8 @@
-// Import Bootstrap and its default variables
-@import '~bootstrap/scss/bootstrap.scss';
+body.bg-dark {
+  background-color: #141010 !important;
+}
+
+.btn-primary {
+  background-color: #c3195d !important;
+  border-color: #c3195d !important;
+}

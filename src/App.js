@@ -6,7 +6,6 @@ import { memo, useEffect } from "react";
 import { Row, Col } from "react-bootstrap";
 // eslint-disable-next-line import/no-webpack-loader-syntax
 import Worker from "worker-loader!./worker.js";
-import { on } from "process";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 
@@ -50,42 +49,6 @@ function processTaskWithWorker(file, setDataUrl) {
   onProcessTaskWithWorker();
 }
 
-function ImageInput({ addImage, removeImage }) {
-  const onDrop = useCallback(
-    (acceptedFiles) => {
-      acceptedFiles.forEach((file) => {
-        const id = uuidv4();
-        processTaskWithWorker({ file: file }, (dataUrl) => {
-          addImage(id, file.name, dataUrl);
-        });
-      });
-    },
-    [addImage]
-  );
-
-  const onRemove = useCallback((id) => {
-    removeImage(id);
-  }, []);
-
-  const { getRootProps, getInputProps, open } = useDropzone({
-    onDrop,
-    noClick: true,
-    noKeyboard: true,
-    accept: {
-      "image/png": [".png"],
-    },
-  });
-
-  return (
-    <div {...getRootProps()} style={{ width: "100vw", height: "100vh" }}>
-      <input {...getInputProps()} />
-      <button type="button" onClick={open}>
-        Open File Dialog
-      </button>
-    </div>
-  );
-}
-
 function exportImages(images) {
   const zip = new JSZip();
   const filenames = {};
@@ -112,8 +75,30 @@ function exportImages(images) {
   });
 }
 
+function ImageEntry({ imageUrl, fileName, removeImage }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: "1em",
+      }}
+    >
+      <img
+        src={imageUrl}
+        alt={fileName}
+        style={{ width: "100px", height: "100px", objectFit: "cover" }}
+      />
+      <span>{fileName}</span>
+      <button onClick={() => removeImage(fileName)}>Remove</button>
+    </div>
+  );
+}
+
 function App() {
   const [images, setImages] = useState({});
+  const [isDragActive, setDragActive] = useState(false);
 
   const addImage = useCallback((id, filename, dataUrl) => {
     setImages((prevState) => ({ ...prevState, [id]: { filename, dataUrl } }));
@@ -131,11 +116,122 @@ function App() {
     exportImages(images);
   }, [images]);
 
+  const onDrop = useCallback(
+    (acceptedFiles) => {
+      acceptedFiles.forEach((file) => {
+        const id = uuidv4();
+        processTaskWithWorker({ file: file }, (dataUrl) => {
+          addImage(id, file.name, dataUrl);
+        });
+      });
+      setDragActive(false);
+    },
+    [addImage, setDragActive]
+  );
+
+  const { getRootProps, getInputProps, open } = useDropzone({
+    onDrop,
+    onDragOver: () => setDragActive(true),
+    onDragLeave: () => setDragActive(false),
+    noClick: true,
+    noKeyboard: true,
+    accept: {
+      "image/png": [".png"],
+    },
+  });
+
   return (
-    <Container fluid className="p-3">
-      <ImageInput addImage={addImage} removeImage={removeImage} />
-      <button onClick={onExport}>Export</button>
-    </Container>
+    <div>
+      {isDragActive && (
+        <div className="drag-text text-center">
+          <span className="red-text display-1">血</span>
+          <br />
+          <span className="display-6"> drag .png files here! </span>
+        </div>
+      )}
+
+      <div
+        {...getRootProps()}
+        style={{
+          position: "fixed",
+          top: 0,
+          right: 0,
+          bottom: 0,
+          left: 0,
+          zIndex: isDragActive ? 1 : -1,
+        }}
+      >
+        <input {...getInputProps()} />
+      </div>
+
+      <div className={isDragActive ? "drag-blur" : ""}>
+        <div class="container-md">
+          <h1 className="display-1 text-center title" aria-label="chipng">
+            <span className="red-text">血chi</span>png
+          </h1>
+          <p className="text-center display-6" style={{ marginBottom: "1em" }}>
+            a tool for <span className="red-text bold-text">bleeding</span>{" "}
+            pixels
+            <sup>
+              <a
+                href="https://medium.com/roblox-development/fixing-images-in-roblox-ui-to-look-good-2e0a7880b1ec"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ textDecoration: "none" }}
+              >
+                [1]
+              </a>
+              <a
+                href="https://github.com/urraka/alpha-bleeding"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ textDecoration: "none" }}
+              >
+                [2]
+              </a>
+            </sup>
+          </p>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={open}
+            aria-label="select .png files"
+          >
+            select .png files
+          </button>
+          or simply drag them into this window.
+          <br />
+          afterwards
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={onExport}
+            aria-label="export"
+          >
+            export
+          </button>{" "}
+          them into your computer.
+          {/* <div
+            className="container.fluid"
+            style={{
+              backgroundColor: "#FFFFFF",
+              height: "70vh",
+              overflowY: "auto",
+              minHeight: "400px",
+              pointerEvents: "none",
+            }}
+          ></div> */}
+          {/* {Object.entries(images).map(([id, { filename, dataUrl }]) => (
+              <ImageEntry
+                key={id}
+                imageUrl={dataUrl}
+                fileName={filename}
+                removeImage={removeImage}
+              />
+            ))} */}
+        </div>
+      </div>
+    </div>
   );
 }
 
