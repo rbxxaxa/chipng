@@ -6,7 +6,8 @@ addEventListener("message", (e) => {
 
   file.arrayBuffer().then((buffer) => {
     const png = new PNG();
-    png.parse(buffer, (err, data) => {
+    png.parse(buffer, (err) => {
+      let data = png.data;
       if (err) throw err;
       const { width, height } = png;
 
@@ -28,7 +29,7 @@ addEventListener("message", (e) => {
       for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
           let idx = width * y + x;
-          let a = png.data[idx * 4 + 3];
+          let a = data[idx * 4 + 3];
           if (a == 0) {
             let isLoose = true;
 
@@ -39,7 +40,7 @@ addEventListener("message", (e) => {
               let nY = y + t;
               let nIdx = width * nY + nX;
               if (nIdx >= 0 && nIdx < width * height) {
-                let neighborAlpha = png.data[nIdx * 4 + 3];
+                let neighborAlpha = data[nIdx * 4 + 3];
 
                 if (neighborAlpha != 0) {
                   isLoose = false;
@@ -82,9 +83,9 @@ addEventListener("message", (e) => {
             let nIdx = width * nY + nX;
             if (nIdx >= 0 && nIdx < width * height) {
               if (opaque[nIdx] & 1) {
-                r += png.data[nIdx * 4 + 0];
-                g += png.data[nIdx * 4 + 1];
-                b += png.data[nIdx * 4 + 2];
+                r += data[nIdx * 4 + 0];
+                g += data[nIdx * 4 + 1];
+                b += data[nIdx * 4 + 2];
 
                 count++;
               }
@@ -92,10 +93,10 @@ addEventListener("message", (e) => {
           }
 
           if (count > 0) {
-            png.data[idx * 4 + 0] = r / count;
-            png.data[idx * 4 + 1] = g / count;
-            png.data[idx * 4 + 2] = b / count;
-            png.data[idx * 4 + 3] = 255;
+            data[idx * 4 + 0] = r / count;
+            data[idx * 4 + 1] = g / count;
+            data[idx * 4 + 2] = b / count;
+            data[idx * 4 + 3] = 0;
             opaque[idx] = 0xfe;
 
             for (let k = 0; k < 8; k++) {
