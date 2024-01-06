@@ -38,11 +38,6 @@ addEventListener("message", (e) => {
         [1, 1],
       ];
 
-      // Create a new PNG with the scaled dimensions
-      const newPng = new PNG({ width: width, height: height });
-      // copy over the old image
-      png.bitblt(newPng, 0, 0, width, height, 0, 0);
-
       for (var y = 0; y < height; y++) {
         for (var x = 0; x < width; x++) {
           var a = png.data[(y * width + x) * 4 + 3];
@@ -97,9 +92,9 @@ addEventListener("message", (e) => {
 
             if (nX >= 0 && nX < width && nY >= 0 && nY < height) {
               if (opaque[nY][nX] & 1) {
-                r += newPng.data[(nY * width + nX) * 4 + 0];
-                g += newPng.data[(nY * width + nX) * 4 + 1];
-                b += newPng.data[(nY * width + nX) * 4 + 2];
+                r += png.data[(nY * width + nX) * 4 + 0];
+                g += png.data[(nY * width + nX) * 4 + 1];
+                b += png.data[(nY * width + nX) * 4 + 2];
 
                 count++;
               }
@@ -107,10 +102,10 @@ addEventListener("message", (e) => {
           }
 
           if (count > 0) {
-            newPng.data[(y * width + x) * 4 + 0] = r / count;
-            newPng.data[(y * width + x) * 4 + 1] = g / count;
-            newPng.data[(y * width + x) * 4 + 2] = b / count;
-            newPng.data[(y * width + x) * 4 + 3] = 0;
+            png.data[(y * width + x) * 4 + 0] = r / count;
+            png.data[(y * width + x) * 4 + 1] = g / count;
+            png.data[(y * width + x) * 4 + 2] = b / count;
+            png.data[(y * width + x) * 4 + 3] = 0;
 
             opaque[y][x] = 0xfe;
 
@@ -142,7 +137,7 @@ addEventListener("message", (e) => {
         pending = pendingNext;
       }
 
-      const resultBuffer = PNG.sync.write(newPng);
+      const resultBuffer = PNG.sync.write(png);
 
       // // Create a new Blob from the buffer
       const blob = new Blob([resultBuffer], { type: "image/png" });
