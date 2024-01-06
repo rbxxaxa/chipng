@@ -1,18 +1,5 @@
 import { PNG } from "pngjs";
 
-function create2DArray(height, width, init) {
-  var arr = [];
-  for (var y = 0; y < height; y++) {
-    arr[y] = [];
-    var row = arr[y];
-    for (var x = 0; x < width; x++) {
-      row[x] = init;
-    }
-  }
-
-  return arr;
-}
-
 // eslint-disable-next-line no-restricted-globals
 addEventListener("message", (e) => {
   const { file } = e.data;
@@ -23,11 +10,11 @@ addEventListener("message", (e) => {
       if (err) throw err;
       const { width, height } = png;
 
-      var opaque = create2DArray(height, width, 0);
-      var loose = create2DArray(height, width, false);
-      var pending = [];
-      var pendingNext = [];
-      var offsets = [
+      let opaque = new Uint8Array(width * height);
+      let loose = new Uint8Array(width * height);
+      let pending = [];
+      let pendingNext = [];
+      let offsets = [
         [-1, -1],
         [0, -1],
         [1, -1],
@@ -38,21 +25,23 @@ addEventListener("message", (e) => {
         [1, 1],
       ];
 
-      for (var y = 0; y < height; y++) {
-        for (var x = 0; x < width; x++) {
-          var a = png.data[(y * width + x) * 4 + 3];
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          let idx = width * y + x;
+          let a = png.data[idx * 4 + 3];
           if (a == 0) {
-            var isLoose = true;
+            let isLoose = true;
 
-            for (var k = 0; k < 8; k++) {
-              var s = offsets[k][0];
-              var t = offsets[k][1];
-              var nX = x + s;
-              var nY = y + t;
-              if (nX >= 0 && nX < width && nY >= 0 && nY < height) {
-                var neighbor_alpha = png.data[(nY * width + nX) * 4 + 3];
+            for (let k = 0; k < 8; k++) {
+              let s = offsets[k][0];
+              let t = offsets[k][1];
+              let nX = x + s;
+              let nY = y + t;
+              let nIdx = width * nY + nX;
+              if (nIdx >= 0 && nIdx < width * height) {
+                let neighborAlpha = png.data[nIdx * 4 + 3];
 
-                if (neighbor_alpha != 0) {
+                if (neighborAlpha != 0) {
                   isLoose = false;
                   break;
                 }
@@ -62,10 +51,10 @@ addEventListener("message", (e) => {
             if (!isLoose) {
               pending.push({ x: x, y: y });
             } else {
-              loose[y][x] = true;
+              loose[idx] = 1;
             }
           } else {
-            opaque[y][x] = -1;
+            opaque[idx] = 0xff;
           }
         }
       }
@@ -73,28 +62,29 @@ addEventListener("message", (e) => {
       while (pending.length > 0) {
         pendingNext = [];
 
-        for (var p = 0; p < pending.length; p++) {
-          var coord = pending[p];
-          var x = coord.x;
-          var y = coord.y;
+        for (let p = 0; p < pending.length; p++) {
+          let coord = pending[p];
+          let x = coord.x;
+          let y = coord.y;
+          let idx = width * y + x;
 
-          var r = 0;
-          var g = 0;
-          var b = 0;
+          let r = 0;
+          let g = 0;
+          let b = 0;
 
-          var count = 0;
+          let count = 0;
 
-          for (var k = 0; k < 8; k++) {
-            var s = offsets[k][0];
-            var t = offsets[k][1];
-            var nX = x + s;
-            var nY = y + t;
-
-            if (nX >= 0 && nX < width && nY >= 0 && nY < height) {
-              if (opaque[nY][nX] & 1) {
-                r += png.data[(nY * width + nX) * 4 + 0];
-                g += png.data[(nY * width + nX) * 4 + 1];
-                b += png.data[(nY * width + nX) * 4 + 2];
+          for (let k = 0; k < 8; k++) {
+            let s = offsets[k][0];
+            let t = offsets[k][1];
+            let nX = x + s;
+            let nY = y + t;
+            let nIdx = width * nY + nX;
+            if (nIdx >= 0 && nIdx < width * height) {
+              if (opaque[nIdx] & 1) {
+                r += png.data[nIdx * 4 + 0];
+                g += png.data[nIdx * 4 + 1];
+                b += png.data[nIdx * 4 + 2];
 
                 count++;
               }
@@ -102,23 +92,23 @@ addEventListener("message", (e) => {
           }
 
           if (count > 0) {
-            png.data[(y * width + x) * 4 + 0] = r / count;
-            png.data[(y * width + x) * 4 + 1] = g / count;
-            png.data[(y * width + x) * 4 + 2] = b / count;
-            png.data[(y * width + x) * 4 + 3] = 0;
+            png.data[idx * 4 + 0] = r / count;
+            png.data[idx * 4 + 1] = g / count;
+            png.data[idx * 4 + 2] = b / count;
+            png.data[idx * 4 + 3] = 255;
+            opaque[idx] = 0xfe;
 
-            opaque[y][x] = 0xfe;
+            for (let k = 0; k < 8; k++) {
+              let s = offsets[k][0];
+              let t = offsets[k][1];
+              let nX = x + s;
+              let nY = y + t;
+              let nIdx = width * nY + nX;
 
-            for (var k = 0; k < 8; k++) {
-              var s = offsets[k][0];
-              var t = offsets[k][1];
-              var nX = x + s;
-              var nY = y + t;
-
-              if (nX >= 0 && nX < width && nY >= 0 && nY < height) {
-                if (loose[nY][nX]) {
+              if (nIdx >= 0 && nIdx < width * height) {
+                if (loose[nIdx]) {
                   pendingNext.push({ x: nX, y: nY });
-                  loose[nY][nX] = false;
+                  loose[nIdx] = 0;
                 }
               }
             }
@@ -128,9 +118,10 @@ addEventListener("message", (e) => {
         }
 
         if (pendingNext.length > 0) {
-          for (var p = 0; p < pending.length; p++) {
-            var coord = pending[p];
-            opaque[coord.y][coord.x] >>= 1;
+          for (let p = 0; p < pending.length; p++) {
+            let coord = pending[p];
+            let idx = width * coord.y + coord.x;
+            opaque[idx] >>= 1;
           }
         }
 
