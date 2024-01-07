@@ -1,16 +1,16 @@
 {
   "files": {
     "main.css": "/chipng/static/css/main.1896cf97.css",
-    "main.js": "/chipng/static/js/main.f4592c5a.js",
+    "main.js": "/chipng/static/js/main.41189eeb.js",
     "static/js/787.b34c35f2.chunk.js": "/chipng/static/js/787.b34c35f2.chunk.js",
     "static/js/worker.6c097512.worker.js": "/chipng/static/js/worker.6c097512.worker.js",
     "index.html": "/chipng/index.html",
     "main.1896cf97.css.map": "/chipng/static/css/main.1896cf97.css.map",
-    "main.f4592c5a.js.map": "/chipng/static/js/main.f4592c5a.js.map",
+    "main.41189eeb.js.map": "/chipng/static/js/main.41189eeb.js.map",
     "787.b34c35f2.chunk.js.map": "/chipng/static/js/787.b34c35f2.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.1896cf97.css",
-    "static/js/main.f4592c5a.js"
+    "static/js/main.41189eeb.js"
   ]
 }
