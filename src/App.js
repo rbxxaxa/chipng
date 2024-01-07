@@ -1,9 +1,7 @@
-import Container from "react-bootstrap/Container";
 import { useCallback, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { v4 as uuidv4 } from "uuid";
 import { memo, useEffect, useRef } from "react";
-import { Row, Col } from "react-bootstrap";
 // eslint-disable-next-line import/no-webpack-loader-syntax
 import Worker from "worker-loader!./worker.js";
 import JSZip from "jszip";
@@ -13,8 +11,6 @@ import { CloseButton } from "react-bootstrap";
 // Create a worker pool
 const workerPool = [];
 const maxWorkers = Math.max(1, navigator.hardwareConcurrency - 1);
-
-const images = [];
 
 for (let i = 0; i < maxWorkers; i++) {
   const worker = new Worker();
@@ -109,7 +105,7 @@ const exportImages = async (images, setIsExportInProgress) => {
   setIsExportInProgress(false);
 };
 
-function ImageEntry({
+const ImageEntry = memo(function ImageEntry({
   id,
   dataUrl,
   fileName,
@@ -178,8 +174,7 @@ function ImageEntry({
       />
     </div>
   );
-}
-ImageEntry = memo(ImageEntry);
+});
 
 function App() {
   const [images, setImages] = useState({});
@@ -269,7 +264,7 @@ function App() {
 
   const onExport = useCallback(() => {
     exportImages(images, setIsExportInProgress);
-  }, [images, exportImages, setIsExportInProgress]);
+  }, [images, setIsExportInProgress]);
 
   const { getRootProps, getInputProps, open } = useDropzone({
     onDrop,
@@ -356,6 +351,14 @@ function App() {
               >
                 [2]
               </a>
+              <a
+                href="https://devforum.roblox.com/t/pixelfix-remove-the-black-edges-on-scaled-images/201802"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ textDecoration: "none" }}
+              >
+                [3]
+              </a>
             </sup>
           </p>
 
@@ -415,9 +418,9 @@ function App() {
               >
                 {processedImageCount !== imageCount
                   ? `processing ${processedImageCount} / ${imageCount} images...`
-                  : validImageCount == 0
+                  : validImageCount === 0
                   ? "export!"
-                  : invalidImageCount == 0
+                  : invalidImageCount === 0
                   ? `export ${validImageCount} images!`
                   : `export ${validImageCount} images! (${invalidImageCount} invalid)`}
               </button>
