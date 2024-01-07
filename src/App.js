@@ -263,7 +263,6 @@ function App() {
           onImageProcessedRef.current(id, isInvalid, processedDataUrl);
         });
       });
-      setDragActive(false);
     },
     [addImage]
   );
@@ -274,14 +273,33 @@ function App() {
 
   const { getRootProps, getInputProps, open } = useDropzone({
     onDrop,
-    onDragOver: () => setDragActive(true),
-    onDragLeave: () => setDragActive(false),
     noClick: true,
     noKeyboard: true,
     accept: {
       "image/png": [".png"],
     },
   });
+
+  useEffect(() => {
+    const dragOver = (e) => {
+      e.preventDefault();
+      setDragActive(true);
+    };
+
+    const dragLeaveOrDrop = () => {
+      setDragActive(false);
+    };
+
+    window.addEventListener("dragover", dragOver);
+    window.addEventListener("dragleave", dragLeaveOrDrop);
+    window.addEventListener("drop", dragLeaveOrDrop);
+
+    return () => {
+      window.removeEventListener("dragover", dragOver);
+      window.removeEventListener("dragleave", dragLeaveOrDrop);
+      window.removeEventListener("drop", dragLeaveOrDrop);
+    };
+  }, []);
 
   return (
     <div>
