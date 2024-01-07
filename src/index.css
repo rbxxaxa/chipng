@@ -21,7 +21,7 @@ body {
 }
 
 .drag-blur {
-  filter: blur(8px);
+  filter: blur(5px);
   content: "";
   position: fixed;
   top: 0;
@@ -42,4 +42,11 @@ body {
   z-index: 2;
   font-family: "Noto Sans JP", sans-serif;
   pointer-events: none;
+}
+
+.button-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  align-items: center;
 }
